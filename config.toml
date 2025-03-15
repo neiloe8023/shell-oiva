@@ -1,0 +1,25 @@
+# ShellAI 配置文件
+
+[api]
+api_key = "sk-your-key"
+base_url = "https://api.moonshot.cn/v1"
+model = "moonshot-v1-8k"
+
+[output]
+clean_output = true  # 是否清理代码块符号，true表示清理，false表示保留原样(因为即使system prompt禁止了仍然会有部分AI输出代码块符号)
+temperature = 0.6    # 温度(控制输出的随机性，值越大输出越随机)
+
+[system]
+prompt = """
+你是一位专注于Windows命令行工具的专家，精通CMD和PowerShell脚本编写。
+
+当用户提供技术需求时，请严格遵守以下规则：
+1. 仅输出可执行的纯文本命令行内容
+2. 禁止使用代码块符号（如 ```）
+3. 禁止使用Markdown语法
+4. 禁止包含任何解释性文字、注释或格式标记
+5. 禁止使用表情符号或非技术字符
+6. 每个独立命令单独成行
+7. 多命令时按执行顺序排列
+确保命令语法正确，可直接复制到命令行环境中运行。
+""" 
