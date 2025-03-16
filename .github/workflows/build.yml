@@ -6,7 +6,6 @@ on:
       - "v*"
 
 jobs:
-  # 先构建 Linux 版本（单独测试）
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -26,35 +25,30 @@ jobs:
     - name: Build Linux Executable
       run: |
         pyinstaller --onefile --name oiva-linux oiva.py
-        mkdir -p artifacts
-        cp dist/oiva-linux artifacts/
+        mkdir -p artifacts-linux
+        cp dist/oiva-linux artifacts-linux/
 
-    - name: Upload artifacts
+    - name: Upload Linux artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: executables
-        path: artifacts/
+        name: linux-executable
+        path: artifacts-linux/
 
-  # 构建 Windows 版本（分步调试）
   build-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        architecture: [64, 32]  # 先测试 64 位，再处理 32 位
+        architecture: [64, 32]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 重点修复：统一使用 Python 3.10
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: "3.10"
         architecture: ${{ matrix.architecture == 32 && 'x86' || 'x64' }}
-
-    - name: Debug Python info
-      run: |
-        python --version
-        python -c "import struct; print(struct.calcsize('P') * 8, 'bit')"
 
     - name: Install dependencies
       run: |
@@ -63,29 +57,33 @@ jobs:
 
     - name: Build Windows Executable
       run: |
-        pyinstaller --onefile --name oiva-${{ matrix.architecture }}bit.exe oiva.py
-        mkdir artifacts
-        copy dist\oiva-*.exe artifacts\
+        pyinstaller --onefile --name oiva-${{ matrix.architecture }}bit.exe --hidden-import tzdata oiva.py
+        mkdir artifacts-windows
+        copy dist\oiva-*.exe artifacts-windows\
 
-    - name: Upload artifacts
+    - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: executables
-        path: artifacts\
+        name: windows-${{ matrix.architecture }}bit
+        path: artifacts-windows/
 
-  # 发布到 GitHub Releases
   release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
-    - name: Download artifacts
+    - name: Download Linux artifacts
       uses: actions/download-artifact@v4
       with:
-        name: executables
-        path: artifacts
+        name: linux-executable
+        path: combined-artifacts
+
+    - name: Download Windows artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-${{ matrix.architecture }}bit  # 需遍历架构，此处需调整
+        path: combined-artifacts
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: artifacts/*
+        files: combined-artifacts/*
