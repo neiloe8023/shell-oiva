@@ -1,12 +1,12 @@
 # ShellAI 配置文件
 
 [api]
-api_key = "sk-your-key"
-base_url = "https://api.moonshot.cn/v1"
-model = "moonshot-v1-8k"
+api_key = "sk-ZTBlMjdkYTg5ZGQ1YTI0NDgwN2Y5OThkZDIwNjAxMzQ"
+base_url = "https://api.gt4.pro/v1"
+model = "gpt-4o-mini"
 
 [output]
-clean_output = true  # 是否清理代码块符号，true表示清理，false表示保留原样(因为即使system prompt禁止了仍然会有部分AI输出代码块符号)
+clean_output = false  # 是否清理代码块符号，true表示清理，false表示保留原样(因为即使system prompt禁止了仍然会有部分AI输出代码块符号)
 temperature = 0.6    # 温度(控制输出的随机性，值越大输出越随机)
 
 [system]

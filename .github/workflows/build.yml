@@ -1,0 +1,74 @@
+name: Build Executables
+
+on:
+  push:
+    tags:
+      - "v*"  # 推送 v1.0.0 这类标签时触发构建
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        include:
+          # Windows 配置
+          - os: windows-latest
+            architecture: 64
+            python_arch: x64
+            output_name: "oiva-64bit.exe"
+          - os: windows-latest
+            architecture: 32
+            python_arch: x86
+            output_name: "oiva-32bit.exe"
+          # Linux 配置
+          - os: ubuntu-latest
+            architecture: 64
+            output_name: "oiva-linux"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 设置 Python 环境（根据架构选择 32/64 位）
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+        architecture: ${{ matrix.python_arch }}  # x86 为 32 位，x64 为 64 位
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    # Windows 构建步骤
+    - name: Build Windows Executable
+      if: startsWith(runner.os, 'Windows')
+      run: |
+        pyinstaller --onefile --name ${{ matrix.output_name }} oiva.py
+        mkdir artifacts
+        copy dist\${{ matrix.output_name }} artifacts\
+
+    # Linux 构建步骤
+    - name: Build Linux Executable
+      if: runner.os == 'Linux'
+      run: |
+        pyinstaller --onefile --name ${{ matrix.output_name }} oiva.py
+        mkdir -p artifacts
+        cp dist/${{ matrix.output_name }} artifacts/
+
+    # 上传生成的可执行文件
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: executables
+        path: artifacts/
+
+    # 自动创建 GitHub Release
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: artifacts/*
+        draft: false
