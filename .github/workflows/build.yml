@@ -34,13 +34,14 @@ jobs:
         cp dist/oiva-linux artifacts-linux/
         cp config.toml artifacts-linux/
         cd artifacts-linux && zip -r ../oiva-linux.zip * && cd ..
-        cp oiva-linux.zip artifacts-linux/
+        mkdir -p zip-artifacts-linux
+        cp oiva-linux.zip zip-artifacts-linux/
 
     - name: Upload Linux artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: linux-artifact
-        path: artifacts-linux/
+        name: linux-zip
+        path: zip-artifacts-linux/
 
   build-windows:
     runs-on: windows-latest
@@ -69,13 +70,14 @@ jobs:
         copy dist\oiva-*.exe artifacts-windows-${{ matrix.architecture }}\
         copy config.toml artifacts-windows-${{ matrix.architecture }}\
         powershell Compress-Archive -Path artifacts-windows-${{ matrix.architecture }}\* -DestinationPath oiva-windows-${{ matrix.architecture }}bit.zip
-        copy oiva-windows-${{ matrix.architecture }}bit.zip artifacts-windows-${{ matrix.architecture }}\
+        mkdir zip-artifacts-windows-${{ matrix.architecture }}
+        copy oiva-windows-${{ matrix.architecture }}bit.zip zip-artifacts-windows-${{ matrix.architecture }}\
 
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: windows-${{ matrix.architecture }}bit
-        path: artifacts-windows-${{ matrix.architecture }}/
+        name: windows-${{ matrix.architecture }}bit-zip
+        path: zip-artifacts-windows-${{ matrix.architecture }}/
 
   release:
     needs: [build-linux, build-windows]
@@ -84,19 +86,19 @@ jobs:
     - name: Download Linux artifact
       uses: actions/download-artifact@v4
       with:
-        name: linux-artifact
+        name: linux-zip
         path: release-files
 
     - name: Download Windows 64-bit artifact
       uses: actions/download-artifact@v4
       with:
-        name: windows-64bit
+        name: windows-64bit-zip
         path: release-files
 
     - name: Download Windows 32-bit artifact
       uses: actions/download-artifact@v4
       with:
-        name: windows-32bit
+        name: windows-32bit-zip
         path: release-files
 
     - name: Create Release

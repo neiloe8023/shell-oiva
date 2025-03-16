@@ -7,8 +7,8 @@ from openai import OpenAI
 
 def print_usage():
     """打印使用说明"""
-    print("用法: python oiva.py <您的问题>")
-    print("示例: python oiva.py 怎么打印文件列表")
+    print("用法: oiva <您的问题>")
+    print("示例: oiva 怎么打印文件列表")
 
 
 class ShellOiva:
