@@ -1,7 +1,7 @@
 # ShellAI 配置文件
 
 [api]
-api_key = "sk-ZTBlMjdkYTg5ZGQ1YTI0NDgwN2Y5OThkZDIwNjAxMzQ"
+api_key = "sk-xxxxxx"
 base_url = "https://api.gt4.pro/v1"
 model = "gpt-4o-mini"
 
