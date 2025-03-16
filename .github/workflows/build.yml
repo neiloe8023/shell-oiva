@@ -32,6 +32,9 @@ jobs:
         pyinstaller --onefile --name oiva-linux oiva.py
         mkdir -p artifacts-linux
         cp dist/oiva-linux artifacts-linux/
+        cp config.toml artifacts-linux/
+        cd artifacts-linux && zip -r ../oiva-linux.zip * && cd ..
+        cp oiva-linux.zip artifacts-linux/
 
     - name: Upload Linux artifacts
       uses: actions/upload-artifact@v4
@@ -64,6 +67,9 @@ jobs:
         pyinstaller --onefile --name oiva-${{ matrix.architecture }}bit.exe --hidden-import tzdata oiva.py
         mkdir artifacts-windows-${{ matrix.architecture }}
         copy dist\oiva-*.exe artifacts-windows-${{ matrix.architecture }}\
+        copy config.toml artifacts-windows-${{ matrix.architecture }}\
+        powershell Compress-Archive -Path artifacts-windows-${{ matrix.architecture }}\* -DestinationPath oiva-windows-${{ matrix.architecture }}bit.zip
+        copy oiva-windows-${{ matrix.architecture }}bit.zip artifacts-windows-${{ matrix.architecture }}\
 
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
