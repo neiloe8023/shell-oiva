@@ -25,14 +25,14 @@ jobs:
     - name: Build Linux Executable
       run: |
         pyinstaller --onefile --name oiva-linux oiva.py
-        mkdir -p artifacts
-        cp dist/oiva-linux artifacts/
+        mkdir -p artifacts-linux
+        cp dist/oiva-linux artifacts-linux/
 
     - name: Upload Linux artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: all-artifacts
-        path: artifacts/
+        name: linux-artifact
+        path: artifacts-linux/
 
   build-windows:
     runs-on: windows-latest
@@ -57,27 +57,38 @@ jobs:
     - name: Build Windows Executable
       run: |
         pyinstaller --onefile --name oiva-${{ matrix.architecture }}bit.exe --hidden-import tzdata oiva.py
-        mkdir artifacts
-        copy dist\oiva-*.exe artifacts\
+        mkdir artifacts-windows-${{ matrix.architecture }}
+        copy dist\oiva-*.exe artifacts-windows-${{ matrix.architecture }}\
 
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: all-artifacts
-        path: artifacts/
-        overwrite: true  # 强制覆盖同名 Artifact
+        name: windows-${{ matrix.architecture }}bit
+        path: artifacts-windows-${{ matrix.architecture }}/
 
   release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
-    - name: Download all artifacts
+    - name: Download Linux artifact
       uses: actions/download-artifact@v4
       with:
-        name: all-artifacts
+        name: linux-artifact
+        path: release-files
+
+    - name: Download Windows 64-bit artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-64bit
+        path: release-files
+
+    - name: Download Windows 32-bit artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-32bit
         path: release-files
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: release-files/*
+        files: release-files/**/*
