@@ -25,14 +25,14 @@ jobs:
     - name: Build Linux Executable
       run: |
         pyinstaller --onefile --name oiva-linux oiva.py
-        mkdir -p artifacts-linux
-        cp dist/oiva-linux artifacts-linux/
+        mkdir -p artifacts
+        cp dist/oiva-linux artifacts/
 
     - name: Upload Linux artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: linux-executable
-        path: artifacts-linux/
+        name: all-artifacts
+        path: artifacts/
 
   build-windows:
     runs-on: windows-latest
@@ -43,7 +43,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 重点修复：统一使用 Python 3.10
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -58,32 +57,27 @@ jobs:
     - name: Build Windows Executable
       run: |
         pyinstaller --onefile --name oiva-${{ matrix.architecture }}bit.exe --hidden-import tzdata oiva.py
-        mkdir artifacts-windows
-        copy dist\oiva-*.exe artifacts-windows\
+        mkdir artifacts
+        copy dist\oiva-*.exe artifacts\
 
     - name: Upload Windows artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: windows-${{ matrix.architecture }}bit
-        path: artifacts-windows/
+        name: all-artifacts
+        path: artifacts/
+        overwrite: true  # 强制覆盖同名 Artifact
 
   release:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     steps:
-    - name: Download Linux artifacts
+    - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
-        name: linux-executable
-        path: combined-artifacts
-
-    - name: Download Windows artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: windows-${{ matrix.architecture }}bit  # 需遍历架构，此处需调整
-        path: combined-artifacts
+        name: all-artifacts
+        path: release-files
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: combined-artifacts/*
+        files: release-files/*
