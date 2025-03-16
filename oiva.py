@@ -74,68 +74,82 @@ class ShellOiva:
 
     def process_query(self, user_query):
         """处理用户查询并返回结果"""
-        stream = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": self.prompt},
-                {"role": "user", "content": user_query}
-            ],
-            temperature=self.temperature,
-            stream=True,
-        )
-        
-        # 如果不需要清理，直接流式输出
-        if not self.clean_output:
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self.prompt},
+                    {"role": "user", "content": user_query}
+                ],
+                temperature=self.temperature,
+                stream=True,
+            )
+            
+            # 如果不需要清理，直接流式输出
+            if not self.clean_output:
+                for chunk in stream:
+                    try:
+                        delta = chunk.choices[0].delta
+                        if delta.content:
+                            print(delta.content, end="")
+                    except IndexError:
+                        print("\n抱歉，API返回了意外的响应格式:", end="")
+                        print(chunk)
+                        break
+                # 最后打印一个换行，让终端提示符显示在新行
+                print()
+                return
+            
+            # 智能流式输出模式，仅在遇到代码块时临时缓存内容
+            buffer = ""  # 临时缓冲区
+            buffering = False  # 是否正在缓存
+            newline_count = 0  # 缓冲区内的换行符计数
+            
             for chunk in stream:
-                delta = chunk.choices[0].delta
-                if delta.content:
-                    print(delta.content, end="")
+                try:
+                    delta = chunk.choices[0].delta
+                    if not delta.content:
+                        continue
+                        
+                    content = delta.content
+                    
+                    # 检查是否包含代码块标记
+                    if "```" in content or buffering:
+                        # 如果发现代码块标记或已经在缓存模式，进入缓存模式
+                        buffering = True
+                        buffer += content
+                        
+                        # 计算缓冲区中的换行符数量
+                        newline_count += content.count('\n')
+                        
+                        # 当缓冲区包含至少2行内容或超过500字符或包含结束标记，处理并输出
+                        if newline_count >= 2 or len(buffer) > 500 or "```" in buffer and buffer.count("```") >= 2:
+                            # 清理代码块标记
+                            cleaned_buffer = self._clean_code_blocks(buffer)
+                            print(cleaned_buffer, end="")
+                            
+                            # 重置缓存状态
+                            buffer = ""
+                            buffering = False
+                            newline_count = 0
+                    else:
+                        # 正常流式输出
+                        print(content, end="")
+                except IndexError:
+                    print("\n抱歉，API返回了意外的响应格式。", end="")
+                    break
+            
+            # 处理剩余的缓冲区内容
+            if buffer:
+                cleaned_buffer = self._clean_code_blocks(buffer)
+                print(cleaned_buffer, end="")
+            
             # 最后打印一个换行，让终端提示符显示在新行
             print()
-            return
-        
-        # 智能流式输出模式，仅在遇到代码块时临时缓存内容
-        buffer = ""  # 临时缓冲区
-        buffering = False  # 是否正在缓存
-        newline_count = 0  # 缓冲区内的换行符计数
-        
-        for chunk in stream:
-            delta = chunk.choices[0].delta
-            if not delta.content:
-                continue
-                
-            content = delta.content
-            
-            # 检查是否包含代码块标记
-            if "```" in content or buffering:
-                # 如果发现代码块标记或已经在缓存模式，进入缓存模式
-                buffering = True
-                buffer += content
-                
-                # 计算缓冲区中的换行符数量
-                newline_count += content.count('\n')
-                
-                # 当缓冲区包含至少2行内容或超过500字符或包含结束标记，处理并输出
-                if newline_count >= 2 or len(buffer) > 500 or "```" in buffer and buffer.count("```") >= 2:
-                    # 清理代码块标记
-                    cleaned_buffer = self._clean_code_blocks(buffer)
-                    print(cleaned_buffer, end="")
-                    
-                    # 重置缓存状态
-                    buffer = ""
-                    buffering = False
-                    newline_count = 0
-            else:
-                # 正常流式输出
-                print(content, end="")
-        
-        # 处理剩余的缓冲区内容
-        if buffer:
-            cleaned_buffer = self._clean_code_blocks(buffer)
-            print(cleaned_buffer, end="")
-        
-        # 最后打印一个换行，让终端提示符显示在新行
-        print()
+        except Exception as e:
+            # 捕获所有可能的异常，包括API连接错误、认证错误等
+            print(f"\n抱歉，无法连接到API或处理您的请求: {str(e)}")
+            print("请检查您的网络连接和API配置。")
     
     def _clean_code_blocks(self, text):
         """清理代码块标记，保留实际内容"""
