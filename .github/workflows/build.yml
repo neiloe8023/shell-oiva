@@ -3,7 +3,12 @@ name: Build Executables
 on:
   push:
     tags:
-      - "v*"
+      - "v*"  # 推送 v1.0.0 这类标签时触发构建
+
+permissions:
+  contents: write  # 允许创建 Release
+  packages: write  # 如果涉及包上传
+  actions: read    # 允许查看其他 Job 状态
 
 jobs:
   build-linux:
@@ -92,3 +97,4 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: release-files/**/*
+        token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}  # 优先使用 PAT
