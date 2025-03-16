@@ -29,9 +29,9 @@ jobs:
 
     - name: Build Linux Executable
       run: |
-        pyinstaller --onefile --name oiva-linux oiva.py
+        pyinstaller --onefile --name oiva oiva.py
         mkdir -p artifacts-linux
-        cp dist/oiva-linux artifacts-linux/
+        cp dist/oiva artifacts-linux/
         cp config.toml artifacts-linux/
         cd artifacts-linux && zip -r ../oiva-linux.zip * && cd ..
         mkdir -p zip-artifacts-linux
@@ -65,9 +65,9 @@ jobs:
 
     - name: Build Windows Executable
       run: |
-        pyinstaller --onefile --name oiva-${{ matrix.architecture }}bit.exe --hidden-import tzdata oiva.py
+        pyinstaller --onefile --name oiva.exe --hidden-import tzdata oiva.py
         mkdir artifacts-windows-${{ matrix.architecture }}
-        copy dist\oiva-*.exe artifacts-windows-${{ matrix.architecture }}\
+        copy dist\oiva.exe artifacts-windows-${{ matrix.architecture }}\
         copy config.toml artifacts-windows-${{ matrix.architecture }}\
         powershell Compress-Archive -Path artifacts-windows-${{ matrix.architecture }}\* -DestinationPath oiva-windows-${{ matrix.architecture }}bit.zip
         mkdir zip-artifacts-windows-${{ matrix.architecture }}
